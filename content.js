@@ -1,11 +1,12 @@
 (function () {
     'use strict';
 
-    // 防止重复注入
-    if (window.screenshotCaptureActive) {
+    // 仅初始化一次监听器，避免重复下载
+    if (globalThis.__screenshotExtensionInitialized) {
         return;
     }
-    window.screenshotCaptureActive = true;
+    globalThis.__screenshotExtensionInitialized = true;
+    globalThis.screenshotCaptureActive = false;
 
     let isSelecting = false;
     let startX = 0;
@@ -19,8 +20,14 @@
 
     // 监听来自popup和background的消息
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'ping') {
+            sendResponse({ ready: true });
+            return;
+        }
+
         if (message.action === 'startCapture') {
             initCapture();
+            sendResponse({ success: true });
         } else if (message.action === 'cropAndDownload') {
             cropAndDownload(message.dataUrl, message.cropArea)
                 .then(() => sendResponse({ success: true }))
@@ -37,6 +44,11 @@
     });
 
     function initCapture() {
+        if (globalThis.screenshotCaptureActive) {
+            return;
+        }
+        globalThis.screenshotCaptureActive = true;
+
         // 创建覆盖层
         overlay = document.createElement('div');
         overlay.className = 'screenshot-overlay';
@@ -383,7 +395,7 @@
 
 
     function cleanup() {
-        window.screenshotCaptureActive = false;
+        globalThis.screenshotCaptureActive = false;
 
         // 清除自动滚动
         if (autoScrollInterval) {

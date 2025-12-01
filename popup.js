@@ -4,7 +4,7 @@ document.getElementById('startCapture').addEventListener('click', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
         // 检查是否是特殊页面
-        if (!tab || !tab.url) {
+        if (!tab?.url) {
             showError('无法获取当前页面信息');
             return;
         }
@@ -18,20 +18,24 @@ document.getElementById('startCapture').addEventListener('click', async () => {
             return;
         }
 
-        // 注入内容脚本
-        await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-        });
+        const scriptReady = await isContentScriptReady(tab.id);
 
-        // 注入样式
-        await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['styles.css']
-        });
+        if (!scriptReady) {
+            // 注入内容脚本
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['content.js']
+            });
+
+            // 注入样式
+            await chrome.scripting.insertCSS({
+                target: { tabId: tab.id },
+                files: ['styles.css']
+            });
+        }
 
         // 发送消息启动截图模式
-        chrome.tabs.sendMessage(tab.id, { action: 'startCapture' });
+        await sendMessageToTab(tab.id, { action: 'startCapture' });
 
         // 关闭popup
         window.close();
@@ -40,6 +44,29 @@ document.getElementById('startCapture').addEventListener('click', async () => {
         showError('启动截图失败\n\n' + error.message);
     }
 });
+
+async function isContentScriptReady(tabId) {
+    try {
+        await sendMessageToTab(tabId, { action: 'ping' });
+        return true;
+    } catch (error) {
+        console.debug('Content script ping failed:', error);
+        return false;
+    }
+}
+
+function sendMessageToTab(tabId, payload) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tabId, payload, response => {
+            const lastError = chrome.runtime.lastError;
+            if (lastError) {
+                reject(new Error(lastError.message));
+                return;
+            }
+            resolve(response);
+        });
+    });
+}
 
 /**
  * 显示错误消息
