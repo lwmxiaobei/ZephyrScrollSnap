@@ -17,6 +17,20 @@
     let toolbar = null;
     let hint = null;
     let autoScrollInterval = null;
+    let toolbarPositionUpdater = null;
+
+    // Drawing board state
+    let drawingOverlay = null;
+    let drawingCanvas = null;
+    let drawingCtx = null;
+    let drawingScale = 1;
+    let drawingPointerId = null;
+    let drawingColor = '#FF2D55';
+    let drawingSize = 6;
+    let drawingHistory = [];
+    let drawingBaseImage = null;
+    const DRAWING_HISTORY_LIMIT = 15;
+    let drawingKeydownHandler = null;
 
     // 监听来自popup和background的消息
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -128,10 +142,7 @@
         isSelecting = false;
 
         // 清除自动滚动
-        if (autoScrollInterval) {
-            clearInterval(autoScrollInterval);
-            autoScrollInterval = null;
-        }
+        stopAutoScroll();
 
         const currentX = e.clientX + window.scrollX;
         const currentY = e.clientY + window.scrollY;
@@ -149,23 +160,90 @@
         showToolbar();
     }
 
+    function removeToolbar() {
+        if (toolbar) {
+            toolbar.remove();
+            toolbar = null;
+        }
+        if (toolbarPositionUpdater) {
+            window.removeEventListener('resize', toolbarPositionUpdater);
+            window.removeEventListener('scroll', toolbarPositionUpdater, true);
+            toolbarPositionUpdater = null;
+        }
+    }
+
     function showToolbar() {
+        removeToolbar();
+
         toolbar = document.createElement('div');
         toolbar.className = 'screenshot-toolbar';
 
-        const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'screenshot-btn-confirm';
-        confirmBtn.textContent = '✓ 确认截图';
-        confirmBtn.onclick = captureScreenshot;
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'screenshot-btn-cancel';
-        cancelBtn.textContent = '✕ 取消';
-        cancelBtn.onclick = cleanup;
+        const confirmBtn = buildToolbarButton('screenshot-btn-confirm', '✓', '确认截图', captureScreenshot);
+        const cancelBtn = buildToolbarButton('screenshot-btn-cancel', '✕', '取消', handleCancelSelection);
 
         toolbar.appendChild(confirmBtn);
         toolbar.appendChild(cancelBtn);
         document.body.appendChild(toolbar);
+
+        toolbarPositionUpdater = () => updateToolbarPosition();
+        updateToolbarPosition();
+        window.addEventListener('resize', toolbarPositionUpdater);
+        window.addEventListener('scroll', toolbarPositionUpdater, true);
+    }
+
+    function handleCancelSelection(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        cleanup();
+    }
+
+    function buildToolbarButton(className, iconText, labelText, onClick) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+
+        const icon = document.createElement('span');
+        icon.className = 'screenshot-btn-icon';
+        icon.textContent = iconText;
+
+        const label = document.createElement('span');
+        label.className = 'screenshot-btn-label';
+        label.textContent = labelText;
+
+        button.appendChild(icon);
+        button.appendChild(label);
+        button.addEventListener('click', onClick);
+        return button;
+    }
+
+    function updateToolbarPosition() {
+        if (!toolbar || !selection) {
+            return;
+        }
+
+        if (selection.style.display === 'none') {
+            return;
+        }
+
+        const rect = selection.getBoundingClientRect();
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const padding = 16;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let left = rect.left + rect.width / 2 - toolbarRect.width / 2;
+        left = Math.min(Math.max(left, padding), viewportWidth - toolbarRect.width - padding);
+
+        let top = rect.bottom + 12;
+        if (top + toolbarRect.height > viewportHeight - padding) {
+            top = rect.top - toolbarRect.height - 12;
+        }
+        top = Math.min(Math.max(top, padding), viewportHeight - toolbarRect.height - padding);
+
+        toolbar.style.left = `${Math.round(left)}px`;
+        toolbar.style.top = `${Math.round(top)}px`;
     }
 
     function captureScreenshot() {
@@ -213,6 +291,16 @@
         if (sizeInfo) sizeInfo.style.display = 'none';
         if (toolbar) toolbar.style.display = 'none';
         if (hint) hint.style.display = 'none';
+    }
+
+    /**
+     * 停止自动滚动
+     */
+    function stopAutoScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
     }
 
     /**
@@ -291,7 +379,8 @@
                         0, 0, canvas.width, canvas.height
                     );
 
-                    downloadImage(canvas.toDataURL('image/png'));
+                    const finalDataUrl = canvas.toDataURL('image/png');
+                    openDrawingBoard(finalDataUrl);
                     resolve();
                 } catch (error) {
                     reject(error);
@@ -366,7 +455,8 @@
                                 });
 
                                 console.log('拼接完成');
-                                downloadImage(canvas.toDataURL('image/png'));
+                                const finalDataUrl = canvas.toDataURL('image/png');
+                                openDrawingBoard(finalDataUrl);
                                 resolve();
                             } catch (error) {
                                 reject(error);
@@ -383,11 +473,271 @@
     }
 
     /**
+     * 展示画板，允许在截图上涂鸦
+     */
+    function openDrawingBoard(imageDataUrl) {
+        closeDrawingBoard();
+
+        drawingOverlay = document.createElement('div');
+        drawingOverlay.className = 'drawing-board-overlay';
+
+        const panel = document.createElement('div');
+        panel.className = 'drawing-board-panel';
+
+        const header = document.createElement('div');
+        header.className = 'drawing-board-header';
+        header.textContent = '截图涂鸦';
+
+        const canvasWrapper = document.createElement('div');
+        canvasWrapper.className = 'drawing-board-canvas-wrapper';
+
+        drawingCanvas = document.createElement('canvas');
+        drawingCanvas.className = 'drawing-board-canvas';
+        drawingCtx = drawingCanvas.getContext('2d');
+        drawingCanvas.style.pointerEvents = 'none';
+        canvasWrapper.appendChild(drawingCanvas);
+
+        const toolbarEl = buildDrawingToolbar();
+
+        panel.appendChild(header);
+        panel.appendChild(canvasWrapper);
+        panel.appendChild(toolbarEl);
+        drawingOverlay.appendChild(panel);
+        document.body.appendChild(drawingOverlay);
+
+        drawingKeydownHandler = (event) => {
+            const key = event.key?.toLowerCase();
+            if (key === 'escape') {
+                event.preventDefault();
+                closeDrawingBoard();
+            } else if ((event.metaKey || event.ctrlKey) && key === 'z') {
+                event.preventDefault();
+                undoDrawing();
+            }
+        };
+        document.addEventListener('keydown', drawingKeydownHandler);
+
+        drawingBaseImage = new Image();
+        drawingBaseImage.onload = () => {
+            drawingCanvas.width = drawingBaseImage.width;
+            drawingCanvas.height = drawingBaseImage.height;
+            drawingCtx.drawImage(drawingBaseImage, 0, 0);
+            updateDrawingCanvasScale();
+            drawingHistory = [drawingCanvas.toDataURL('image/png')];
+            drawingCanvas.style.pointerEvents = 'auto';
+        };
+        drawingBaseImage.onerror = () => {
+            alert('无法加载截图用于编辑');
+            closeDrawingBoard();
+        };
+        drawingBaseImage.src = imageDataUrl;
+
+        drawingCanvas.addEventListener('pointerdown', handleDrawingPointerDown);
+        drawingCanvas.addEventListener('pointermove', handleDrawingPointerMove);
+        drawingCanvas.addEventListener('pointerup', handleDrawingPointerUp);
+        drawingCanvas.addEventListener('pointerleave', handleDrawingPointerUp);
+        drawingCanvas.addEventListener('pointercancel', handleDrawingPointerUp);
+
+        window.addEventListener('resize', updateDrawingCanvasScale);
+    }
+
+    function closeDrawingBoard() {
+        if (drawingCanvas) {
+            drawingCanvas.removeEventListener('pointerdown', handleDrawingPointerDown);
+            drawingCanvas.removeEventListener('pointermove', handleDrawingPointerMove);
+            drawingCanvas.removeEventListener('pointerup', handleDrawingPointerUp);
+            drawingCanvas.removeEventListener('pointerleave', handleDrawingPointerUp);
+            drawingCanvas.removeEventListener('pointercancel', handleDrawingPointerUp);
+        }
+        window.removeEventListener('resize', updateDrawingCanvasScale);
+
+        drawingOverlay?.remove();
+        drawingOverlay = null;
+        drawingCanvas = null;
+        drawingCtx = null;
+        drawingHistory = [];
+        drawingBaseImage = null;
+        drawingPointerId = null;
+        if (drawingKeydownHandler) {
+            document.removeEventListener('keydown', drawingKeydownHandler);
+            drawingKeydownHandler = null;
+        }
+    }
+
+    function buildDrawingToolbar() {
+        const toolbarEl = document.createElement('div');
+        toolbarEl.className = 'drawing-board-toolbar';
+
+        const colorLabel = document.createElement('label');
+        colorLabel.textContent = '画笔颜色';
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = drawingColor;
+        colorInput.addEventListener('input', (e) => {
+            drawingColor = e.target.value;
+        });
+        colorLabel.appendChild(colorInput);
+
+        const sizeLabel = document.createElement('label');
+        sizeLabel.className = 'drawing-board-size-label';
+        const sizeTitle = document.createElement('span');
+        sizeTitle.textContent = '画笔粗细';
+        const sizeText = document.createElement('span');
+        sizeText.className = 'drawing-board-size-value';
+        sizeText.textContent = `${drawingSize}px`;
+        const sizeInput = document.createElement('input');
+        sizeInput.type = 'range';
+        sizeInput.min = '2';
+        sizeInput.max = '40';
+        sizeInput.value = String(drawingSize);
+        sizeInput.addEventListener('input', (e) => {
+            drawingSize = Number(e.target.value);
+            sizeText.textContent = `${drawingSize}px`;
+        });
+        sizeLabel.appendChild(sizeTitle);
+        sizeLabel.appendChild(sizeInput);
+        sizeLabel.appendChild(sizeText);
+
+        const undoBtn = document.createElement('button');
+        undoBtn.textContent = '撤销';
+        undoBtn.type = 'button';
+        undoBtn.addEventListener('click', undoDrawing);
+
+        const clearBtn = document.createElement('button');
+        clearBtn.textContent = '清空';
+        clearBtn.type = 'button';
+        clearBtn.addEventListener('click', resetDrawing);
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = '保存图片';
+        downloadBtn.className = 'drawing-board-btn_primary';
+        downloadBtn.type = 'button';
+        downloadBtn.addEventListener('click', () => {
+            if (!drawingCanvas) return;
+            downloadImage(drawingCanvas.toDataURL('image/png'));
+            closeDrawingBoard();
+        });
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '关闭';
+        cancelBtn.type = 'button';
+        cancelBtn.addEventListener('click', closeDrawingBoard);
+
+        toolbarEl.appendChild(colorLabel);
+        toolbarEl.appendChild(sizeLabel);
+        toolbarEl.appendChild(undoBtn);
+        toolbarEl.appendChild(clearBtn);
+        toolbarEl.appendChild(cancelBtn);
+        toolbarEl.appendChild(downloadBtn);
+
+        return toolbarEl;
+    }
+
+    function updateDrawingCanvasScale() {
+        if (!drawingCanvas) return;
+        const width = drawingCanvas.width;
+        const height = drawingCanvas.height;
+        const padding = 200;
+        const maxWidth = Math.max(200, window.innerWidth - padding);
+        const maxHeight = Math.max(200, window.innerHeight - 240);
+        drawingScale = Math.min(1, maxWidth / width, maxHeight / height);
+        drawingCanvas.style.width = `${Math.round(width * drawingScale)}px`;
+        drawingCanvas.style.height = `${Math.round(height * drawingScale)}px`;
+    }
+
+    function handleDrawingPointerDown(event) {
+        if (!drawingCanvas || drawingPointerId !== null) {
+            return;
+        }
+        event.preventDefault();
+        drawingPointerId = event.pointerId;
+        drawingCanvas.setPointerCapture(drawingPointerId);
+        const { x, y } = translatePointerToCanvas(event);
+        drawingCtx.beginPath();
+        drawingCtx.moveTo(x, y);
+        drawingCtx.strokeStyle = drawingColor;
+        drawingCtx.lineWidth = drawingSize;
+        drawingCtx.lineJoin = 'round';
+        drawingCtx.lineCap = 'round';
+    }
+
+    function handleDrawingPointerMove(event) {
+        if (!drawingCanvas || drawingPointerId !== event.pointerId) {
+            return;
+        }
+        event.preventDefault();
+        const { x, y } = translatePointerToCanvas(event);
+        drawingCtx.lineTo(x, y);
+        drawingCtx.stroke();
+    }
+
+    function handleDrawingPointerUp(event) {
+        if (!drawingCanvas || drawingPointerId !== event.pointerId) {
+            return;
+        }
+        event.preventDefault();
+        drawingCanvas.releasePointerCapture(drawingPointerId);
+        drawingPointerId = null;
+        drawingCtx.closePath();
+        pushDrawingHistory();
+    }
+
+    function translatePointerToCanvas(event) {
+        const rect = drawingCanvas.getBoundingClientRect();
+        const scaleX = drawingCanvas.width / rect.width;
+        const scaleY = drawingCanvas.height / rect.height;
+        return {
+            x: (event.clientX - rect.left) * scaleX,
+            y: (event.clientY - rect.top) * scaleY
+        };
+    }
+
+    function pushDrawingHistory() {
+        if (!drawingCanvas) return;
+        const snapshot = drawingCanvas.toDataURL('image/png');
+        drawingHistory.push(snapshot);
+        if (drawingHistory.length > DRAWING_HISTORY_LIMIT) {
+            drawingHistory.shift();
+        }
+    }
+
+    function undoDrawing() {
+        if (drawingHistory.length <= 1 || !drawingCanvas) {
+            return;
+        }
+        drawingHistory.pop();
+        const previous = drawingHistory.at(-1);
+        restoreCanvasFromData(previous);
+    }
+
+    function resetDrawing() {
+        if (!drawingHistory.length || !drawingCanvas) {
+            return;
+        }
+        const original = drawingHistory[0];
+        drawingHistory = [original];
+        restoreCanvasFromData(original);
+    }
+
+    function restoreCanvasFromData(dataUrl) {
+        if (!drawingCtx || !drawingCanvas) return;
+        const img = new Image();
+        img.onload = () => {
+            drawingCanvas.width = img.width;
+            drawingCanvas.height = img.height;
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingCtx.drawImage(img, 0, 0);
+            updateDrawingCanvasScale();
+        };
+        img.src = dataUrl;
+    }
+
+    /**
      * 下载图片
      */
     function downloadImage(dataUrl) {
         const link = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-').slice(0, -5);
         link.download = `screenshot_${timestamp}.png`;
         link.href = dataUrl;
         link.click();
@@ -403,21 +753,11 @@
             autoScrollInterval = null;
         }
 
-        if (overlay && overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-        }
-        if (selection && selection.parentNode) {
-            selection.parentNode.removeChild(selection);
-        }
-        if (sizeInfo && sizeInfo.parentNode) {
-            sizeInfo.parentNode.removeChild(sizeInfo);
-        }
-        if (toolbar && toolbar.parentNode) {
-            toolbar.parentNode.removeChild(toolbar);
-        }
-        if (hint && hint.parentNode) {
-            hint.parentNode.removeChild(hint);
-        }
+        overlay?.remove();
+        selection?.remove();
+        sizeInfo?.remove();
+        toolbar?.remove();
+        hint?.remove();
 
         document.removeEventListener('keydown', handleKeyDown);
     }

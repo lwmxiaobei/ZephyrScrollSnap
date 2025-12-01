@@ -38,66 +38,91 @@
 /* 工具栏 */
 .screenshot-toolbar {
   position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 12px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  display: flex;
+  min-width: 240px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.45);
+  color: #e2e8f0;
+  display: inline-flex;
+  align-items: center;
   gap: 12px;
   z-index: 2147483647;
-  animation: slideUp 0.3s ease;
+  backdrop-filter: blur(16px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: toolbarFade 0.25s ease;
 }
 
-@keyframes slideUp {
+@keyframes toolbarFade {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(20px);
+    transform: translate3d(0, 12px, 0) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 .screenshot-toolbar button {
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
   border: none;
-  border-radius: 6px;
+  background: transparent;
+  color: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.screenshot-toolbar button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.screenshot-toolbar button:focus-visible {
+  outline: 2px solid rgba(148, 163, 184, 0.9);
+  outline-offset: 3px;
 }
 
-.screenshot-toolbar button:active {
-  transform: translateY(0);
+.screenshot-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.screenshot-btn-label {
+  letter-spacing: 0.02em;
 }
 
 .screenshot-btn-confirm {
-  background: #4A90E2;
-  color: white;
+  background: linear-gradient(135deg, #4A90E2, #2563EB);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.5);
 }
 
 .screenshot-btn-confirm:hover {
-  background: #357ABD;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.55);
+}
+
+.screenshot-btn-confirm:active {
+  transform: translateY(0);
 }
 
 .screenshot-btn-cancel {
-  background: #f0f0f0;
-  color: #333;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
 }
 
 .screenshot-btn-cancel:hover {
-  background: #e0e0e0;
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-cancel:active {
+  transform: translateY(0);
 }
 
 /* 提示文字 */
@@ -127,4 +152,114 @@
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
+}
+
+/* 画板 */
+.drawing-board-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.drawing-board-panel {
+  background: #ffffff;
+  border-radius: 18px;
+  width: min(1200px, 100%);
+  height: min(90vh, 100%);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+}
+
+.drawing-board-header {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 18px 28px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.drawing-board-canvas-wrapper {
+  flex: 1;
+  padding: 24px;
+  overflow: auto;
+  background: repeating-linear-gradient(45deg, #f8fafc 0 20px, #f1f5f9 20px 40px);
+}
+
+.drawing-board-canvas {
+  display: block;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+}
+
+.drawing-board-toolbar {
+  padding: 18px 28px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.drawing-board-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.drawing-board-toolbar input[type="color"] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.drawing-board-toolbar input[type="range"] {
+  width: 140px;
+}
+
+.drawing-board-toolbar button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f3f4f6;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.drawing-board-toolbar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+.drawing-board-toolbar button:active {
+  transform: translateY(0);
+}
+
+.drawing-board-btn-primary {
+  background: #4A90E2 !important;
+  color: #fff;
+}
+
+.drawing-board-size-label {
+  min-width: 200px;
+  justify-content: space-between;
+}
+
+.drawing-board-size-value {
+  min-width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
