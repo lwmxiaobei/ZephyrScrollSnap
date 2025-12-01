@@ -1,0 +1,130 @@
+/* 全局样式重置 */
+.screenshot-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: crosshair;
+  z-index: 2147483646;
+  user-select: none;
+}
+
+/* 选择框 */
+.screenshot-selection {
+  position: absolute;
+  border: 2px solid #4A90E2;
+  background: rgba(74, 144, 226, 0.1);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* 尺寸提示 */
+.screenshot-size-info {
+  position: absolute;
+  background: #4A90E2;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 工具栏 */
+.screenshot-toolbar {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 12px;
+  z-index: 2147483647;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.screenshot-toolbar button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.screenshot-toolbar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.screenshot-toolbar button:active {
+  transform: translateY(0);
+}
+
+.screenshot-btn-confirm {
+  background: #4A90E2;
+  color: white;
+}
+
+.screenshot-btn-confirm:hover {
+  background: #357ABD;
+}
+
+.screenshot-btn-cancel {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.screenshot-btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+/* 提示文字 */
+.screenshot-hint {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  color: #333;
+  z-index: 2147483647;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

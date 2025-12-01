@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>截图测试页面</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 200vh;
+        }
+
+        .test-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .color-box {
+            width: 200px;
+            height: 200px;
+            display: inline-block;
+            margin: 10px;
+            border: 3px solid #333;
+            border-radius: 8px;
+        }
+
+        .red {
+            background: #ff6b6b;
+        }
+
+        .green {
+            background: #51cf66;
+        }
+
+        .blue {
+            background: #339af0;
+        }
+
+        .yellow {
+            background: #ffd43b;
+        }
+
+        .info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Chrome截图插件测试页面</h1>
+
+    <div class="test-box">
+        <h2>测试说明</h2>
+        <div class="info">
+            <p><strong>测试目标：</strong>验证截图区域与选择区域是否一致</p>
+            <p><strong>测试步骤：</strong></p>
+            <ol>
+                <li>点击Chrome扩展图标，启动截图</li>
+                <li>选择下方的一个或多个彩色方块</li>
+                <li>确认截图并下载</li>
+                <li>检查下载的图片是否准确包含所选区域</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🎨 彩色测试方块</h2>
+        <p>尝试准确选择这些方块进行截图：</p>
+        <div class="color-box red"></div>
+        <div class="color-box green"></div>
+        <div class="color-box blue"></div>
+        <div class="color-box yellow"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>📏 DPI测试信息</h2>
+        <div class="info">
+            <p><strong>设备像素比：</strong><span id="dpr"></span></p>
+            <p><strong>窗口宽度：</strong><span id="width"></span>px</p>
+            <p><strong>窗口高度：</strong><span id="height"></span>px</p>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>🔽 滚动测试区域</h2>
+        <p>向下滚动，尝试选择跨越多个屏幕的区域进行长图截图</p>
+        <div
+            style="height: 800px; background: linear-gradient(to bottom, #ff6b6b, #51cf66, #339af0, #ffd43b); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+            长图测试区域
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('dpr').textContent = window.devicePixelRatio || 1;
+        document.getElementById('width').textContent = window.innerWidth;
+        document.getElementById('height').textContent = window.innerHeight;
+    </script>
+</body>
+
+</html>
