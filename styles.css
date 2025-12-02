@@ -14,8 +14,8 @@
 /* 选择框 */
 .screenshot-selection {
   position: absolute;
-  border: 2px solid #4A90E2;
-  background: rgba(74, 144, 226, 0.08);
+  border: 2px solid #009EFD;
+  background: rgba(0, 158, 253, 0.1);
   box-shadow: none;
   pointer-events: none;
 }
@@ -23,7 +23,7 @@
 /* 尺寸提示 */
 .screenshot-size-info {
   position: absolute;
-  background: #4A90E2;
+  background: #009EFD;
   color: white;
   padding: 4px 8px;
   border-radius: 4px;
@@ -123,6 +123,179 @@
 
 .screenshot-btn-cancel:active {
   transform: translateY(0);
+}
+
+.screenshot-btn-mosaic {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.screenshot-btn-mosaic:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-mosaic:active {
+  transform: translateY(0);
+}
+
+.screenshot-btn-mosaic.active {
+  background: linear-gradient(135deg, #FF2D55, #FF6B8A);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 16px rgba(255, 45, 85, 0.4);
+}
+
+/* 画笔按钮 */
+.screenshot-btn-pen {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.screenshot-btn-pen:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-pen:active {
+  transform: translateY(0);
+}
+
+.screenshot-btn-pen.active {
+  background: linear-gradient(135deg, #10B981, #34D399);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* 矩形按钮 */
+.screenshot-btn-rect {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.screenshot-btn-rect:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-rect:active {
+  transform: translateY(0);
+}
+
+.screenshot-btn-rect.active {
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.4);
+}
+
+/* 箭头按钮 */
+.screenshot-btn-arrow {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.screenshot-btn-arrow:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-arrow:active {
+  transform: translateY(0);
+}
+
+.screenshot-btn-arrow.active {
+  background: linear-gradient(135deg, #8B5CF6, #A78BFA);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* 撤销按钮 */
+.screenshot-btn-undo {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.screenshot-btn-undo:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 0.75);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.screenshot-btn-undo:active {
+  transform: translateY(0);
+}
+
+/* 画笔设置面板 */
+.screenshot-pen-settings {
+  position: fixed;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.45);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2147483647;
+  backdrop-filter: blur(16px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: toolbarFade 0.2s ease;
+}
+
+.screenshot-pen-setting-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.screenshot-pen-setting-item input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.screenshot-pen-setting-item input[type="range"] {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.screenshot-pen-setting-item input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #10B981;
+  cursor: pointer;
+}
+
+.screenshot-pen-size-value {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* 提示文字 */
@@ -262,4 +435,9 @@
   min-width: 48px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.drawing-board-toolbar .tool-btn.active {
+    background: #e2e8f0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }

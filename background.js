@@ -1,7 +1,7 @@
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'capture') {
-        handleCapture(message.selection, sender.tab.id);
+        handleCapture(message.selection, sender.tab.id, message.mosaicDataUrl, message.penDataUrl, message.rectDataUrl, message.arrowDataUrl);
         return true; // 保持消息通道开启
     }
 });
@@ -9,7 +9,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * 处理截图请求
  */
-async function handleCapture(selection, tabId) {
+async function handleCapture(selection, tabId, mosaicDataUrl, penDataUrl, rectDataUrl, arrowDataUrl) {
     try {
         console.log('开始截图...', selection);
 
@@ -19,7 +19,7 @@ async function handleCapture(selection, tabId) {
         // 判断是否需要滚动截图
         if (height <= windowHeight && endY <= scrollY + windowHeight) {
             // 单视口截图
-            await captureSingleView(selection, tabId);
+            await captureSingleView(selection, tabId, mosaicDataUrl, penDataUrl, rectDataUrl, arrowDataUrl);
         } else {
             // 长图滚动截图
             await captureLongScreenshot(selection, tabId);
@@ -43,7 +43,7 @@ async function handleCapture(selection, tabId) {
 /**
  * 单视口截图
  */
-async function captureSingleView(selection, tabId) {
+async function captureSingleView(selection, tabId, mosaicDataUrl, penDataUrl, rectDataUrl, arrowDataUrl) {
     // 捕获当前视口
     const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
 
@@ -57,7 +57,11 @@ async function captureSingleView(selection, tabId) {
                 y: selection.y - selection.scrollY,
                 width: selection.width,
                 height: selection.height
-            }
+            },
+            mosaicDataUrl: mosaicDataUrl,
+            penDataUrl: penDataUrl,
+            rectDataUrl: rectDataUrl,
+            arrowDataUrl: arrowDataUrl
         });
 
         if (!response.success) {
